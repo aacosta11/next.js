@@ -29,7 +29,7 @@ describe('app-dir - server source maps', () => {
       const outputIndex = next.cliOutput.length
       await next.render('/rsc-error-log')
 
-      await retry(() => {
+      await retry(async () => {
         expect(next.cliOutput.slice(outputIndex)).toContain(
           'Error: rsc-error-log'
         )
@@ -70,7 +70,7 @@ describe('app-dir - server source maps', () => {
       const outputIndex = next.cliOutput.length
       await next.render('/rsc-error-log-cause')
 
-      await retry(() => {
+      await retry(async () => {
         expect(next.cliOutput.slice(outputIndex)).toContain(
           'Error: rsc-error-log-cause'
         )
@@ -127,7 +127,7 @@ describe('app-dir - server source maps', () => {
       const outputIndex = next.cliOutput.length
       const browser = await next.browser('/ssr-error-log-ignore-listed')
 
-      await retry(() => {
+      await retry(async () => {
         expect(next.cliOutput.slice(outputIndex)).toContain(
           'Error: ssr-error-log-ignore-listed'
         )
@@ -244,7 +244,7 @@ describe('app-dir - server source maps', () => {
     await next.render('/rsc-error-log-ignore-listed')
 
     if (isNextDev) {
-      await retry(() => {
+      await retry(async () => {
         expect(normalizeCliOutput(next.cliOutput.slice(outputIndex))).toContain(
           'Error: rsc-error-log-ignore-listed'
         )
@@ -310,7 +310,7 @@ describe('app-dir - server source maps', () => {
       const outputIndex = next.cliOutput.length
       const browser = await next.browser('/ssr-throw')
 
-      await retry(() => {
+      await retry(async () => {
         expect(next.cliOutput.slice(outputIndex)).toContain('Error: ssr-throw')
       })
 
@@ -358,7 +358,7 @@ describe('app-dir - server source maps', () => {
       cliOutput = next.cliOutput.slice(outputIndex)
     }
 
-    await retry(() => {
+    await retry(async () => {
       expect(cliOutput).toContain(
         // TODO: isNextDev ? 'UnnamedError: rsc-error-log-custom-name-Foo' : '[Error]: rsc-error-log-custom-name-Foo'
         isNextDev
@@ -380,7 +380,7 @@ describe('app-dir - server source maps', () => {
       const outputIndex = next.cliOutput.length
       await next.render('/bad-sourcemap')
 
-      await retry(() => {
+      await retry(async () => {
         expect(normalizeCliOutput(next.cliOutput.slice(outputIndex))).toContain(
           'Error: bad-sourcemap'
         )

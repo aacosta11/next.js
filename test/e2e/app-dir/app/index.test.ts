@@ -1,5 +1,5 @@
 import { nextTestSetup } from 'e2e-utils'
-import { check, retry, waitFor } from 'next-test-utils'
+import { retry, waitFor } from 'next-test-utils'
 import cheerio from 'cheerio'
 import stripAnsi from 'strip-ansi'
 
@@ -159,14 +159,12 @@ describe('app dir - basic', () => {
     it('should successfully detect app route during prefetch', async () => {
       const browser = await next.browser('/')
 
-      await check(async () => {
+      await retry(async () => {
         const found = await browser.eval(
           '!!window.next.router.components["/dashboard"]'
         )
-        return found
-          ? 'success'
-          : await browser.eval('Object.keys(window.next.router.components)')
-      }, 'success')
+        expect(found).toBe(true)
+      })
 
       await browser.elementByCss('a').click()
       await browser.waitForElementByCss('#from-dashboard')
@@ -213,10 +211,10 @@ describe('app dir - basic', () => {
       let browser = await next.browser('/')
 
       await browser.eval(`next.router.push("${pathname}")`)
-      await check(async () => {
+      await retry(async () => {
         const href = await browser.eval('location.href')
-        return href.includes('example.vercel.sh') ? 'yes' : href
-      }, 'yes')
+        expect(href.includes('example.vercel.sh')).toBeTruthy()
+      })
 
       if (pathname.includes('/blog')) {
         browser = await next.browser('/blog/first')
@@ -238,12 +236,12 @@ describe('app dir - basic', () => {
     const browser = await next.browser('/')
     await browser.eval('window.beforeNav = 1')
 
-    await check(async () => {
+    await retry(async () => {
       await browser.eval(
         `window.next.router.push('/', '/redirect-1', { shallow: true })`
       )
-      return await browser.eval('window.location.pathname')
-    }, '/redirect-1')
+      expect(await browser.eval('window.location.pathname')).toBe('/redirect-1')
+    })
     expect(await browser.eval('window.beforeNav')).toBe(1)
   })
 
@@ -550,7 +548,7 @@ describe('app dir - basic', () => {
 
       try {
         // Click the link.
-        await check(async () => {
+        await retry(async () => {
           await browser.elementById('link-to-rewritten-path').click()
           await browser.waitForElementByCss('#from-dashboard', 5000)
 
@@ -562,8 +560,7 @@ describe('app dir - basic', () => {
           expect(await browser.elementByCss('#from-dashboard').text()).toBe(
             'hello from app/dashboard'
           )
-          return 'success'
-        }, 'success')
+        })
       } finally {
         await browser.close()
       }
@@ -833,7 +830,7 @@ describe('app dir - basic', () => {
 
       try {
         // Click the link.
-        await check(async () => {
+        await retry(async () => {
           await browser.elementById('pages-link').click()
 
           expect(
@@ -845,8 +842,7 @@ describe('app dir - basic', () => {
           expect(await browser.waitForElementByCss('#app-text').text()).toBe(
             'hello from app/dynamic-pages-route-app-overlap/app-dir/page'
           )
-          return 'success'
-        }, 'success')
+        })
       } finally {
         await browser.close()
       }
@@ -1110,10 +1106,11 @@ describe('app dir - basic', () => {
             .waitForElementByCss(`#navigate-${method}`)
             .elementById(`navigate-${method}`)
             .click()
-          await check(
-            async () => await browser.elementByCss('#success').text(),
-            /Success/
-          )
+          await retry(async () => {
+            expect(await browser.elementByCss('#success').text()).toMatch(
+              /Success/
+            )
+          })
         }
       )
     })
@@ -1185,7 +1182,11 @@ describe('app dir - basic', () => {
             origContent.replace('hello from', 'swapped from')
           )
 
-          await check(() => browser.elementByCss('p').text(), /swapped from/)
+          await retry(async () => {
+            expect(await browser.elementByCss('p').text()).toMatch(
+              /swapped from/
+            )
+          })
         } finally {
           await next.patchFile(filePath, origContent)
         }
@@ -1211,14 +1212,20 @@ describe('app dir - basic', () => {
             origContent.replace('hello from', 'swapped from')
           )
 
-          await check(() => browser.elementByCss('p').text(), /swapped from/)
+          await retry(async () => {
+            expect(await browser.elementByCss('p').text()).toMatch(
+              /swapped from/
+            )
+          })
 
           const ssrUpdated = await next.render('/client-component-route')
           expect(ssrUpdated).toContain('swapped from')
 
           await next.patchFile(filePath, origContent)
 
-          await check(() => browser.elementByCss('p').text(), /hello from/)
+          await retry(async () => {
+            expect(await browser.elementByCss('p').text()).toMatch(/hello from/)
+          })
           expect(await next.render('/client-component-route')).toContain(
             'hello from'
           )
@@ -1247,10 +1254,11 @@ describe('app dir - basic', () => {
               'hello dashboard/page in server component!'
             )
           )
-          await check(
-            () => browser.elementByCss('p').text(),
-            /in server component/
-          )
+          await retry(async () => {
+            expect(await browser.elementByCss('p').text()).toMatch(
+              /in server component/
+            )
+          })
 
           // Change to client component
           await next.patchFile(
@@ -1262,10 +1270,11 @@ describe('app dir - basic', () => {
                 'hello dashboard/page in client component!'
               )
           )
-          await check(
-            () => browser.elementByCss('p').text(),
-            /in client component/
-          )
+          await retry(async () => {
+            expect(await browser.elementByCss('p').text()).toMatch(
+              /in client component/
+            )
+          })
 
           // Change back to server component
           await next.patchFile(
@@ -1275,10 +1284,11 @@ describe('app dir - basic', () => {
               'hello dashboard/page in server component2!'
             )
           )
-          await check(
-            () => browser.elementByCss('p').text(),
-            /in server component2/
-          )
+          await retry(async () => {
+            expect(await browser.elementByCss('p').text()).toMatch(
+              /in server component2/
+            )
+          })
 
           // Change to client component again
           await next.patchFile(
@@ -1290,10 +1300,11 @@ describe('app dir - basic', () => {
                 'hello dashboard/page in client component2!'
               )
           )
-          await check(
-            () => browser.elementByCss('p').text(),
-            /in client component2/
-          )
+          await retry(async () => {
+            expect(await browser.elementByCss('p').text()).toMatch(
+              /in client component2/
+            )
+          })
         } finally {
           await next.patchFile(filePath, origContent)
         }
@@ -1647,7 +1658,7 @@ describe('app dir - basic', () => {
         const browser = await next.browser('/script')
 
         // Wait for lazyOnload scripts to be ready.
-        await check(async () => {
+        await retry(async () => {
           expect(await browser.eval(`window._script_order`)).toStrictEqual([
             1,
             1.5,
@@ -1657,8 +1668,7 @@ describe('app dir - basic', () => {
             3,
             4,
           ])
-          return 'yes'
-        }, 'yes')
+        })
       })
 
       it('should pass on extra props for beforeInteractive scripts with a src prop', async () => {
