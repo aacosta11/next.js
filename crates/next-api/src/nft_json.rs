@@ -57,7 +57,9 @@ impl OutputAsset for NftJsonAsset {
         Ok(path
             .fs
             .root()
-            .join(format!("{}.nft.json", path.path).into()))
+            .await?
+            .join(&format!("{}.nft.json", path.path))?
+            .cell())
     }
 }
 
@@ -108,13 +110,14 @@ impl Asset for NftJsonAsset {
         let client_root_ref = client_root.await?;
 
         // Example: [output]/apps/my-website/.next/server/app -- without the `.nft.json`
-        let ident_folder = self.path().parent().await?;
+        let ident_folder = self.path().await?.parent();
         // Example: [project]/apps/my-website/.next/server/app -- without the `.nft.json`
         let ident_folder_in_project_fs = this
             .project
             .project_root_path() // Example: [project]
-            .join(ident_folder.path.clone()) // apps/my-website/.next/server/app
-            .await?;
+            .await?
+            // apps/my-website/.next/server/app
+            .join(&ident_folder.path)?;
 
         let chunk = this.chunk;
         let entries = this

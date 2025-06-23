@@ -373,12 +373,12 @@ impl ChunkingContext for BrowserChunkingContext {
 
     #[turbo_tasks::function]
     fn root_path(&self) -> Vc<FileSystemPath> {
-        *self.root_path
+        self.root_path.clone().cell()
     }
 
     #[turbo_tasks::function]
     fn output_root(&self) -> Vc<FileSystemPath> {
-        *self.output_root
+        self.output_root.clone().cell()
     }
 
     #[turbo_tasks::function]
@@ -393,7 +393,7 @@ impl ChunkingContext for BrowserChunkingContext {
 
     #[turbo_tasks::function]
     async fn chunk_root_path(&self) -> Vc<FileSystemPath> {
-        *self.chunk_root_path
+        self.chunk_root_path.clone().cell()
     }
 
     #[turbo_tasks::function]
@@ -407,11 +407,11 @@ impl ChunkingContext for BrowserChunkingContext {
             extension.starts_with("."),
             "`extension` should include the leading '.', got '{extension}'"
         );
-        let root_path = self.chunk_root_path;
+        let root_path = self.chunk_root_path.clone();
         let name = match self.content_hashing {
             None => {
                 ident
-                    .output_name(*self.root_path, extension)
+                    .output_name(self.root_path.clone(), extension)
                     .owned()
                     .await?
             }
@@ -432,14 +432,14 @@ impl ChunkingContext for BrowserChunkingContext {
                 }
             }
         };
-        Ok(root_path.join(name))
+        Ok(root_path.join(&name)?.cell())
     }
 
     #[turbo_tasks::function]
     async fn asset_url(&self, ident: FileSystemPath) -> Result<Vc<RcStr>> {
-        let asset_path = ident.await?.to_string();
+        let asset_path = ident.to_string();
         let asset_path = asset_path
-            .strip_prefix(&format!("{}/", self.client_root.await?.path))
+            .strip_prefix(&format!("{}/", self.client_root.path))
             .context("expected asset_path to contain client_root")?;
 
         Ok(Vc::cell(
@@ -490,7 +490,7 @@ impl ChunkingContext for BrowserChunkingContext {
                 content_hash = &content_hash[..8]
             ),
         };
-        Ok(self.asset_root_path.join(asset_path.into()))
+        Ok(self.asset_root_path.join(&asset_path)?.cell())
     }
 
     #[turbo_tasks::function]
