@@ -1,11 +1,10 @@
+import type { Corners } from '../../../shared'
 import { useRef } from 'react'
 
 interface Point {
   x: number
   y: number
 }
-
-type Corners = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
 interface Corner {
   corner: Corners
@@ -18,6 +17,7 @@ export function Draggable({
   position: currentCorner,
   setPosition: setCurrentCorner,
   onDragStart,
+  ...props
 }: {
   children: React.ReactElement
   position: Corners
@@ -122,7 +122,7 @@ export function Draggable({
   }
 
   return (
-    <div ref={ref} {...drag} style={{ touchAction: 'none' }}>
+    <div {...props} ref={ref} {...drag} style={{ touchAction: 'none' }}>
       {children}
     </div>
   )

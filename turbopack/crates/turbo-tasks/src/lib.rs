@@ -36,6 +36,7 @@
 #![feature(new_zeroed_alloc)]
 #![feature(never_type)]
 #![feature(downcast_unchecked)]
+#![feature(ptr_metadata)]
 
 pub mod backend;
 mod capture_future;
@@ -76,7 +77,6 @@ mod state;
 pub mod task;
 pub mod task_statistics;
 pub mod trace;
-mod trait_helpers;
 mod trait_ref;
 mod triomphe_utils;
 pub mod util;
