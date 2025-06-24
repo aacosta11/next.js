@@ -15,8 +15,7 @@ use turbopack_core::{
     },
     context::AssetContext,
     issue::{
-        Issue, IssueExt, IssueSeverity, IssueSource, IssueStage, OptionIssueSource,
-        OptionStyledString, StyledString,
+        Issue, IssueExt, IssueSeverity, IssueSource, IssueStage, OptionStyledString, StyledString,
     },
     module::Module,
     reference::ModuleReference,
@@ -228,7 +227,7 @@ impl ModuleReference for EsmAssetReference {
             *self.request,
             ty,
             false,
-            Some(self.issue_source.clone()),
+            Some(self.issue_source),
         )
         .await?;
 
@@ -240,7 +239,7 @@ impl ModuleReference for EsmAssetReference {
                     InvalidExport {
                         export: export_name.clone(),
                         module,
-                        source: self.issue_source.clone(),
+                        source: self.issue_source,
                     }
                     .resolved_cell()
                     .emit();
@@ -534,8 +533,7 @@ impl Issue for InvalidExport {
         )))
     }
 
-    #[turbo_tasks::function]
-    fn source(&self) -> Vc<OptionIssueSource> {
-        Vc::cell(Some(self.source.clone()))
+    fn source(&self) -> Option<&IssueSource> {
+        Some(&self.source)
     }
 }
