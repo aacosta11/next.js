@@ -2381,8 +2381,9 @@ async fn realpath_with_links(path: FileSystemPath) -> Result<Vc<RealPathResult>>
             current_vc = if link_type.contains(LinkType::ABSOLUTE) {
                 (*current_vc.root().await?).clone()
             } else {
-                parent_result.path.join(target)?
-            };
+                parent_result.path
+            }
+            .join(target)?;
         } else {
             // get_type() and read_link() might disagree temporarily due to turbo-tasks
             // eventual consistency or if the file gets invalidated before the directory does
