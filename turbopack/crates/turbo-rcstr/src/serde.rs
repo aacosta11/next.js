@@ -61,6 +61,8 @@ fn intern_for_serialize(str: &RcStr) -> Option<u32> {
 
 impl Serialize for RcStr {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        // If it's too short, it's not worth interning.
+        // If it's too long, it's unlikely to be repeated.
         if self.len() >= 3 && self.len() < 512 {
             let id = intern_for_serialize(self);
             if let Some(id) = id {
