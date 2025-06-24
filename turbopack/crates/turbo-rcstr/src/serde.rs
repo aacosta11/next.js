@@ -15,7 +15,7 @@ scoped_thread_local!(
 );
 
 scoped_thread_local!(
-    /// Read-only map of strings to their interned ids
+    /// Read-only map interned ids to their strings
     static DE_MAP: Vec<RcStr>
 );
 
