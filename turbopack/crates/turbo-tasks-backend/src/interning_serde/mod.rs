@@ -2,8 +2,7 @@
 
 use std::io::Write;
 
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use smallvec::SmallVec;
+use serde::{Deserialize, Serialize};
 use turbo_rcstr::RcStr;
 use turbo_tasks::FxIndexSet;
 
@@ -11,7 +10,7 @@ use turbo_tasks::FxIndexSet;
 struct SerData<'l>(&'l [u8], FxIndexSet<RcStr>);
 
 #[derive(Deserialize)]
-struct DeserData(SmallVec<[u8; 16]>, Vec<RcStr>);
+struct DeserData<'l>(&'l [u8], Vec<RcStr>);
 
 pub fn to_vec<T>(config: &pot::Config, value: &T) -> pot::Result<Vec<u8>>
 where
@@ -33,11 +32,11 @@ where
     config.serialize_into(&data, writer)
 }
 
-pub fn from_slice<T>(config: &pot::Config, slice: &[u8]) -> pot::Result<T>
+pub fn from_slice<'de, T>(config: &pot::Config, slice: &'de [u8]) -> pot::Result<T>
 where
-    T: DeserializeOwned,
+    T: Deserialize<'de>,
 {
     let data: DeserData = config.deserialize(slice)?;
 
-    turbo_rcstr::set_de_map(&data.1, || config.deserialize(&data.0))
+    turbo_rcstr::set_de_map(&data.1, || config.deserialize(data.0))
 }

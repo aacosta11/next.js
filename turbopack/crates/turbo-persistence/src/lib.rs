@@ -22,7 +22,6 @@ mod static_sorted_file_builder;
 mod tests;
 mod value_buf;
 mod write_batch;
-mod write_batch;
 
 pub use arc_slice::ArcSlice;
 pub use db::{MetaFileEntryInfo, MetaFileInfo, TurboPersistence};

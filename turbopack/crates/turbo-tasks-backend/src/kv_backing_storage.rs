@@ -6,24 +6,25 @@ use std::{
     sync::{Arc, LazyLock, Mutex, PoisonError, Weak},
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use tracing::Span;
-use turbo_persistence::interning_serde;
 use turbo_tasks::{
+    SessionId, TaskId,
     backend::CachedTaskType,
-    panic_hooks::{register_panic_hook, PanicHookGuard},
-    turbo_tasks_scope, SessionId, TaskId,
+    panic_hooks::{PanicHookGuard, register_panic_hook},
+    turbo_tasks_scope,
 };
 
 use crate::{
+    GitVersionInfo,
     backend::{AnyOperation, TaskDataCategory},
     backing_storage::{BackingStorage, BackingStorageSealed},
     data::CachedDataItem,
     database::{
-        db_invalidation::{check_db_invalidation_and_cleanup, invalidate_db, StartupCacheState},
+        db_invalidation::{StartupCacheState, check_db_invalidation_and_cleanup, invalidate_db},
         db_versioning::handle_db_versioning,
         key_value_database::{KeySpace, KeyValueDatabase},
         write_batch::{
@@ -34,7 +35,6 @@ use crate::{
     db_invalidation::invalidation_reasons,
     interning_serde,
     utils::chunked_vec::ChunkedVec,
-    GitVersionInfo,
 };
 
 const POT_CONFIG: pot::Config = pot::Config::new().compatibility(pot::Compatibility::V4);
@@ -798,7 +798,7 @@ fn serialize(task: TaskId, data: &Vec<CachedDataItem>) -> Result<SmallVec<[u8; 1
 }
 
 fn deserialize_with_good_error<'de, T: Deserialize<'de>>(data: &'de [u8]) -> Result<T> {
-    match interning_serde::from_slice(&POT_CONFIG, data)? {
+    match interning_serde::from_slice::<T>(&POT_CONFIG, data) {
         Ok(value) => Ok(value),
         Err(error) => serde_path_to_error::deserialize::<'_, _, T>(
             &mut pot_de_symbol_list().deserializer_for_slice(data)?,
