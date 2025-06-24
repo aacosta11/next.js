@@ -1241,12 +1241,13 @@ impl FileSystemPath {
 
     /// Similar to [FileSystemPath::join], but returns an Option that will be
     /// None when the joined path would leave the filesystem root.
+    #[allow(clippy::needless_borrow)]
     pub fn try_join(&self, path: &str) -> Result<Option<FileSystemPath>> {
         // TODO(PACK-3279): Remove this once we do not produce invalid paths at the first place.
         #[cfg(target_os = "windows")]
         let path = path.replace('\\', "/");
 
-        if let Some(path) = join_path(&self.path, path) {
+        if let Some(path) = join_path(&self.path, &path) {
             Ok(Some(Self::new_normalized(self.fs, path.into())))
         } else {
             Ok(None)
