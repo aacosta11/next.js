@@ -18,6 +18,7 @@ shrink-to-fit = { workspace = true }
 bytes-str = { workspace = true }
 indexmap = { workspace = true }
 rustc-hash = { workspace = true }
+scoped-tls = "1.0.1"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 napi = { workspace = true, optional = true }
