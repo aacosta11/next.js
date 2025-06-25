@@ -17,11 +17,11 @@ new_debug_unreachable = "1.0.6"
 shrink-to-fit = { workspace = true }
 bytes-str = { workspace = true }
 indexmap = { workspace = true }
+rustc-hash = { workspace = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 napi = { workspace = true, optional = true }
 scoped-tls = "1.0.1"
-rustc-hash = { workspace = true }
 indexmap = { workspace = true }
 
 [dev-dependencies]
