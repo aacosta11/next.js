@@ -7,7 +7,7 @@ use swc_core::{
     ecma::{
         ast::*,
         atoms::{Atom, atom},
-        utils::find_pat_ids,
+        utils::{IsDirective, find_pat_ids},
         visit::{Visit, VisitWith},
     },
 };
@@ -171,6 +171,9 @@ pub(crate) struct ImportMap {
 
     /// True if the module accesses `this` at the top level (which is only really allowed in CJS).
     pub(crate) uses_top_level_this: bool,
+
+    /// True if the module has "use strict"
+    pub(crate) strict: bool,
 
     /// Locations of [webpack-style "magic comments"][magic] that override import behaviors.
     ///
@@ -701,6 +704,18 @@ impl Visit for Analyzer<'_> {
 
     fn visit_program(&mut self, m: &Program) {
         self.data.has_top_level_await = has_top_level_await(m).is_some();
+        self.data.strict = match m {
+            Program::Module(module) => module
+                .body
+                .iter()
+                .take_while(|s| s.directive_continue())
+                .any(IsDirective::is_use_strict),
+            Program::Script(script) => script
+                .body
+                .iter()
+                .take_while(|s| s.directive_continue())
+                .any(IsDirective::is_use_strict),
+        };
 
         m.visit_children_with(self);
     }

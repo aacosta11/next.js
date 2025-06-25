@@ -127,7 +127,7 @@ use crate::{
     side_effect_optimization::reference::EcmascriptModulePartReference,
     simple_tree_shake::{ModuleExportUsageInfo, get_module_export_usages},
     swc_comments::{CowComments, ImmutableComments},
-    transform::remove_shebang,
+    transform::{remove_directives, remove_shebang},
 };
 
 #[derive(
@@ -889,6 +889,7 @@ pub struct EcmascriptModuleContent {
     pub source_map: Option<Rope>,
     pub is_esm: bool,
     pub uses_top_level_this: bool,
+    pub strict: bool,
     pub additional_ids: SmallVec<[ResolvedVc<ModuleId>; 1]>,
 }
 
@@ -1145,6 +1146,7 @@ impl EcmascriptModuleContent {
             },
             export_contexts: None,
             is_esm: true,
+            strict: true,
             uses_top_level_this: false,
             generate_source_map: options.generate_source_map,
             original_source_map: CodeGenResultOriginalSourceMap::ScopeHoisting(
@@ -1549,6 +1551,7 @@ struct CodeGenResult {
     export_contexts: Option<FxHashMap<RcStr, Id>>,
     is_esm: bool,
     uses_top_level_this: bool,
+    strict: bool,
     generate_source_map: bool,
     original_source_map: CodeGenResultOriginalSourceMap,
     minify: MinifyType,
@@ -1574,26 +1577,29 @@ async fn process_parse_result(
     with_consumed_parse_result(
         parsed,
         async |mut program, source_map, globals, eval_context, comments| -> Result<CodeGenResult> {
-            let (top_level_mark, is_esm, uses_top_level_this, export_contexts) = eval_context
-                .map_either(
-                    |e| {
-                        (
-                            e.top_level_mark,
-                            e.is_esm(specified_module_type),
-                            e.imports.uses_top_level_this,
-                            Cow::Owned(e.imports.exports),
-                        )
-                    },
-                    |e| {
-                        (
-                            e.top_level_mark,
-                            e.is_esm(specified_module_type),
-                            e.imports.uses_top_level_this,
-                            Cow::Borrowed(&e.imports.exports),
-                        )
-                    },
-                )
-                .into_inner();
+            let (top_level_mark, is_esm, uses_top_level_this, strict, export_contexts) =
+                eval_context
+                    .map_either(
+                        |e| {
+                            (
+                                e.top_level_mark,
+                                e.is_esm(specified_module_type),
+                                e.imports.uses_top_level_this,
+                                e.imports.strict,
+                                Cow::Owned(e.imports.exports),
+                            )
+                        },
+                        |e| {
+                            (
+                                e.top_level_mark,
+                                e.is_esm(specified_module_type),
+                                e.imports.uses_top_level_this,
+                                e.imports.strict,
+                                Cow::Borrowed(&e.imports.exports),
+                            )
+                        },
+                    )
+                    .into_inner();
 
             let (mut code_gens, retain_syntax_context, prepend_ident_comment) =
                 if let Some(scope_hoisting_options) = scope_hoisting_options {
@@ -1716,6 +1722,7 @@ async fn process_parse_result(
                 // we need to remove any shebang before bundling as it's only valid as the first
                 // line in a js file (not in a chunk item wrapped in the runtime)
                 remove_shebang(&mut program);
+                remove_directives(&mut program);
             });
 
             Ok(CodeGenResult {
@@ -1730,6 +1737,7 @@ async fn process_parse_result(
                 // TODO ideally don't clone here at all
                 export_contexts: Some(export_contexts.into_owned()),
                 is_esm,
+                strict,
                 uses_top_level_this,
                 generate_source_map,
                 original_source_map: CodeGenResultOriginalSourceMap::Single(original_source_map),
@@ -1766,6 +1774,7 @@ async fn process_parse_result(
                         comments: CodeGenResultComments::Empty,
                         export_contexts: None,
                         is_esm: false,
+                        strict: false,
                         uses_top_level_this: false,
                         generate_source_map: false,
                         original_source_map: CodeGenResultOriginalSourceMap::Single(None),
@@ -1794,6 +1803,7 @@ async fn process_parse_result(
                         comments: CodeGenResultComments::Empty,
                         export_contexts: None,
                         is_esm: false,
+                        strict: false,
                         uses_top_level_this: false,
                         generate_source_map: false,
                         original_source_map: CodeGenResultOriginalSourceMap::Single(None),
@@ -1886,6 +1896,7 @@ async fn emit_content(
         comments,
         is_esm,
         uses_top_level_this,
+        strict,
         generate_source_map,
         original_source_map,
         minify,
@@ -1951,6 +1962,7 @@ async fn emit_content(
         source_map,
         is_esm,
         uses_top_level_this,
+        strict,
         additional_ids,
     }
     .cell())

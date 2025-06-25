@@ -126,6 +126,7 @@ impl CachedExternalModule {
             source_map: None,
             is_esm: self.external_type != CachedExternalType::CommonJs,
             uses_top_level_this: false,
+            strict: false,
             additional_ids: Default::default(),
         }
         .cell())
